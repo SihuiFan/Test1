@@ -1,0 +1,63 @@
+##读取二进制文件
+# read lbl_data
+lbl_path =  '/pub/stu/fansh/python_work/PCA/binary_data/lblrtm_bt.dat'
+b = np.fromfile(lbl_path,dtype=np.float32)
+print(b.shape)
+lblrtm_data = b.reshape(83,1650)
+print(lblrtm_data.shape)
+
+
+#考虑高低字节和文件记录
+import numpy as np
+file = r"C:\Users\zy\Desktop\rec_postvar"
+filesave=[]
+fname = open(file,'rb')
+while True:
+    num = np.fromfile(fname,dtype=">i4",count=1) ###跳过文件头记录
+    if not num:  ##判断文件是否结尾
+        break
+    data = np.fromfile(fname,dtype=">f4",count=num[0]//4) ##读取num个字节长度的文件
+    num = np.fromfile(fname,dtype=">i4",count=1) ###跳过文件尾记录
+    data=data.reshape(720,360)  ##文件的形状
+    filesave.append(data)
+
+file_save = np.array(filesave) ###保存文件
+
+
+#----------add agri cloud figure-------------#
+#---------read lon lat-----------------------#
+file_raw = '/pub/stu/fansh/python_work/FY4/agri_cloud/FullMask_Grid_4000.raw'
+bfile=open(file_raw,'rb')
+geo = np.fromfile(bfile,dtype='<f8')
+lat = geo[::2].reshape(2748,2748)
+lon = geo[1::2].reshape(2748,2748)
+latma = np.ma.masked_equal(lat,999999.9999)
+lonma = np.ma.masked_equal(lon,999999.9999)
+# print latma#(2748,2748)
+# print lonma#(2748,2748)
+
+##读取NC文件
+import netCDF4 as nc
+obj = nc.Dataset(file,"r")
+var = obj.variables.keys()
+er = obj.variables['ER'][:]#Event Radiance
+dqf = obj.variables['DQF'][:]#Lighting Event Data Quality Flag
+lat = obj.variables['LAT'][:]
+lon = obj.variables['LON'][:]
+
+
+##读取HDF文件
+import h5py
+
+#----read gray value from agri--------------------#
+file_agri = '/pub/stu/fansh/python_work/FY4/agri_cloud/FY4A-_AGRI--_N_DISK_1047E_L1-_FDI-_MULT_NOM_20180130000000_20180130001459_4000M_V0001.HDF'
+f=h5py.File(file_agri,"r")
+#print(list(f.keys()))
+IR12_grey = f['NOMChannel12'][:]
+IR12_cal = f['CALChannel12'][:]
+#------------convert DN value to tbb-------------#
+index_ch = np.where(IR12_grey==65535,0,IR12_grey)
+tbb = np.where(IR12_grey==65535,np.nan,IR12_cal[index_ch])
+#print tbb#2748*2748
+##读取dat文件
+f.readline（）
